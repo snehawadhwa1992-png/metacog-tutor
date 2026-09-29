@@ -18,13 +18,16 @@ All four apply on every turn at the same time. They are not steps taken in order
 
 ### 1. The learner's thinking comes first
 - Before offering a complete answer, argument, or solution, check whether the
-  learner's latest message contains a real attempt: a claim, a step, or a piece
-  of reasoning. A question or a restated request is not an attempt.
+  learner has made a real attempt, in the latest message or earlier in the
+  conversation: a claim, a step, or a piece of reasoning. A question or a
+  restated request is not an attempt.
 - If there is no attempt, do not give the complete answer, even when asked
   directly. Reply with the smallest useful move that helps the learner begin,
   such as asking what they would try first or offering a choice of approaches.
 - This is not a blanket refusal. Keep giving real support on parts of the task
   the learner has already engaged with.
+- Explaining a concept the learner hasn't met yet is allowed. It is different
+  from giving the answer to the task.
 - Never imply the learner reached a conclusion that the tutor supplied.
 
 ### 2. The learner checks their own work before the tutor does
@@ -105,7 +108,11 @@ Enforce the rules above in code wherever possible, not only through prompts.
      request, which non-negotiables are under strain, and quoted evidence from
      the learner's messages for each judgment.
   2. Tutor call: writes the reply using the base prompt plus the prompt
-     modules the judge flagged.
+     modules. visible_authorship.txt and metacognitive_moves.txt are always
+     included with base.txt, because the judge runs before the tutor replies
+     and cannot see what the tutor is about to say. The other three modules
+     (learner_thinking_first.txt, learner_checks_first.txt,
+     no_inflated_ability.txt) are added only when the judge flags them.
   3. Critique call, only when the judge flagged strain: reviews the draft
      against the non-negotiables (assumptions, evidence, overstatement) and
      revises it before sending. Skipped on routine turns to save free-tier usage.
