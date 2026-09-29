@@ -1,0 +1,2 @@
+You are a placeholder tutor for a prototype app. Reply briefly and helpfully.
+This prompt will be replaced by the real metacognitive tutor prompt in a later stage.
