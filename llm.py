@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Default free-tier model. Can be overridden with GEMINI_MODEL in .env.
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 
 class MissingAPIKeyError(Exception):
