@@ -1,21 +1,20 @@
-"""Streamlit chat interface for the Metacognitive AI Tutor (foundation stage).
+"""Streamlit chat interface for the Metacognitive AI Tutor.
+
+Each learner turn: judge call, then the tutor call with the assembled prompt.
 
 Run with:  streamlit run app.py
 """
 
-from pathlib import Path
-
 import streamlit as st
 
+import judge
 import llm
+import prompt_loader
 
-PROMPTS_DIR = Path(__file__).parent / "prompts"
-
-
-def load_prompt(name):
-    """Read a prompt text file from the /prompts folder."""
-    return (PROMPTS_DIR / name).read_text(encoding="utf-8")
-
+# Set to True to run the judge call before each tutor reply (two calls per turn).
+# When False, the tutor gets base.txt plus all five modules in one call, which
+# uses less of the free-tier quota.
+JUDGE_ENABLED = False
 
 st.set_page_config(page_title="Metacognitive AI Tutor")
 st.title("Metacognitive AI Tutor")
@@ -28,10 +27,35 @@ except llm.MissingAPIKeyError as e:
     st.info("You can copy .env.example to .env if the .env file does not exist.")
     st.stop()
 
-# Placeholder sidebar: judge output and learner state will appear here later.
-with st.sidebar:
-    st.header("Tutor internals")
-    st.caption("Judge output and learner state will appear here in a later stage.")
+
+def render_sidebar():
+    """Show the latest turn's judge output and which modules were included."""
+    with st.sidebar:
+        st.header("Tutor internals")
+        st.markdown(f"**Judge: {'on' if JUDGE_ENABLED else 'off'}**")
+        turn = st.session_state.get("last_turn")
+        if not turn:
+            st.caption("Details will appear here after your first message.")
+            return
+
+        for warning in turn["warnings"]:
+            st.warning(warning)
+
+        st.subheader("Modules included")
+        st.markdown("\n".join(f"- {name}" for name in turn["modules_used"]))
+
+        if not JUDGE_ENABLED:
+            return
+
+        st.subheader("Judge output")
+        if turn["judge"] is not None:
+            st.json(turn["judge"])
+        elif turn["raw"]:
+            st.caption("Raw judge reply (could not be parsed):")
+            st.code(turn["raw"])
+        else:
+            st.caption("No judge output this turn.")
+
 
 # Chat history lives in the session, so it resets when the page is reloaded.
 if "messages" not in st.session_state:
@@ -50,13 +74,30 @@ if user_text := st.chat_input("Type your message"):
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
+            if JUDGE_ENABLED:
+                # 1. Judge: decides which of the three optional modules apply.
+                verdict = judge.run_judge(st.session_state.messages)
+                modules = verdict["modules"]
+            else:
+                # Judge off: no judge call, send all five modules.
+                verdict = {"judge": None, "raw": None, "modules": [], "warnings": []}
+                modules = prompt_loader.ALL_MODULES
+
+            # 2. Tutor: base + always-on modules + flagged (or all) modules.
+            system_prompt, modules_used = prompt_loader.build_tutor_prompt(modules)
+            st.session_state.last_turn = {**verdict, "modules_used": modules_used}
             try:
-                reply = llm.generate(load_prompt("base.txt"), st.session_state.messages)
+                reply = llm.generate(system_prompt, st.session_state.messages)
             except llm.LLMError as e:
                 st.error(str(e))
                 # Drop the unanswered message so the history stays consistent.
                 st.session_state.messages.pop()
-                st.stop()
-        st.markdown(reply)
+                reply = None
+        if reply is not None:
+            st.markdown(reply)
 
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    if reply is not None:
+        st.session_state.messages.append({"role": "assistant", "content": reply})
+
+# Drawn last so it reflects the turn that just ran.
+render_sidebar()

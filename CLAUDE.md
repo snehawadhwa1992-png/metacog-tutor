@@ -106,7 +106,9 @@ Enforce the rules above in code wherever possible, not only through prompts.
   1. Judge call (returns JSON): whether a real attempt is present, whether the
      learner has self-checked, whether there is a misconception or an empty
      request, which non-negotiables are under strain, and quoted evidence from
-     the learner's messages for each judgment.
+     the learner's messages for each judgment. "Under strain" will be added
+     with the critique call in Session 4. Misconception detection is deferred
+     until it has its own criteria section in a prompt file.
   2. Tutor call: writes the reply using the base prompt plus the prompt
      modules. visible_authorship.txt and metacognitive_moves.txt are always
      included with base.txt, because the judge runs before the tutor replies
@@ -116,6 +118,16 @@ Enforce the rules above in code wherever possible, not only through prompts.
   3. Critique call, only when the judge flagged strain: reviews the draft
      against the non-negotiables (assumptions, evidence, overstatement) and
      revises it before sending. Skipped on routine turns to save free-tier usage.
+- Judge setting: JUDGE_ENABLED at the top of app.py, off (False) by default to
+  save free-tier usage. When off, there is no judge call: the tutor gets
+  base.txt plus all five modules in one call, and the sidebar shows
+  "Judge: off". The judge code stays in the repo so it can be switched back on.
+- API errors: temporary 503 errors are retried (up to 2 times) in llm.py.
+  Quota errors (429 / RESOURCE_EXHAUSTED) are never retried and show "Free
+  usage limit reached, please wait and try again." If the main model is still
+  returning 503 after the retries, llm.py tries FALLBACK_MODEL (a lighter
+  model, set at the top of llm.py) once; if that is busy too, it
+  shows "The AI service is busy right now. Please wait a moment and try again."
 - Learner state, tracked in code for the session: a contribution ledger
   (learner ideas vs. tutor ideas), a log of assisted vs. independent attempts,
   and a count of consecutive question-only tutor replies.
