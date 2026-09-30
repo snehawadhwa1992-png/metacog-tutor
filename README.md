@@ -205,7 +205,6 @@ no API calls.
 - **Live:** three conversations with the base prompt only (before the modules
   were added): a request with no attempt, asking again for the answer, and
   asking for a concept explanation. All three behaved as intended.
-- **Pending:** the full live test set with all modules.
 - **Offline only:** the judge (JSON parsing, module validation, quote check),
   prompt assembly, and the retry and fallback logic (`tests/test_judge.py`).
 
